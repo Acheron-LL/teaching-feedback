@@ -208,7 +208,7 @@
                             ${[1,2,3,4,5].map(star => `
                                 <i class="bi bi-star star" data-value="${star}"></i>
                             `).join('')}
-                            <input type="hidden" id="example${i}Rating" name="example${i}Rating" required>
+                            <input type="hidden" id="example${i}Rating" name="example${i}Rating">
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -217,7 +217,7 @@
                             ${[1,2,3,4,5].map(star => `
                                 <i class="bi bi-star star" data-value="${star}"></i>
                             `).join('')}
-                            <input type="hidden" id="variant${i}_1Rating" name="variant${i}_1Rating" required>
+                            <input type="hidden" id="variant${i}_1Rating" name="variant${i}_1Rating">
                         </div>
                     </div>
                 </div>
@@ -228,7 +228,7 @@
                             ${[1,2,3,4,5].map(star => `
                                 <i class="bi bi-star star" data-value="${star}"></i>
                             `).join('')}
-                            <input type="hidden" id="variant${i}_2Rating" name="variant${i}_2Rating" required>
+                            <input type="hidden" id="variant${i}_2Rating" name="variant${i}_2Rating">
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -237,7 +237,7 @@
                             ${[1,2,3,4,5].map(star => `
                                 <i class="bi bi-star star" data-value="${star}"></i>
                             `).join('')}
-                            <input type="hidden" id="variant${i}_3Rating" name="variant${i}_3Rating" required>
+                            <input type="hidden" id="variant${i}_3Rating" name="variant${i}_3Rating">
                         </div>
                     </div>
                 </div>
@@ -270,11 +270,60 @@
         // 设置默认日期为今天
         document.getElementById('classDate').valueAsDate = new Date();
 
-        // 表单提交处理
+        // ==================== 表单提交处理 ====================
         document.getElementById('feedbackForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // 收集表单数据
+            // 禁用提交按钮，防止重复提交
+            const submitBtn = document.querySelector('.submit-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 提交中...';
+            
+            try {
+                // 收集表单数据
+                const formData = collectFormData();
+                
+                // 验证必要字段
+                if (!formData.teacherName.trim()) {
+                    throw new Error('请填写教师姓名');
+                }
+                if (!formData.grade) {
+                    throw new Error('请选择年级');
+                }
+                if (!formData.classType) {
+                    throw new Error('请选择班型');
+                }
+                if (!formData.lectureTitle.trim()) {
+                    throw new Error('请填写讲次标题');
+                }
+                if (!formData.canFinish) {
+                    throw new Error('请选择能否一次课讲完');
+                }
+                
+                // 提交反馈
+                const result = await submitFeedback(formData);
+                
+                // 显示成功消息
+                showSuccessMessage(result);
+                
+                // 重置表单
+                setTimeout(() => {
+                    resetForm();
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }, 3000);
+                
+            } catch (error) {
+                console.error('提交错误:', error);
+                alert('提交失败：' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+
+        // 收集表单数据
+        function collectFormData() {
             const formData = {
                 teacherName: document.getElementById('teacherName').value,
                 grade: document.getElementById('grade').value,
@@ -283,42 +332,157 @@
                 lectureTitle: document.getElementById('lectureTitle').value,
                 canFinish: document.querySelector('input[name="canFinish"]:checked').value,
                 suggestions: document.getElementById('suggestions').value,
-                ratings: {}
+                ratings: {},
+                timestamp: new Date().toISOString()
             };
             
-            // 收集所有评分
+            // 收集评分
             for (let i = 1; i <= 5; i++) {
-                formData.ratings[`example${i}`] = document.getElementById(`example${i}Rating`).value;
-                formData.ratings[`variant${i}_1`] = document.getElementById(`variant${i}_1Rating`).value;
-                formData.ratings[`variant${i}_2`] = document.getElementById(`variant${i}_2Rating`).value;
-                formData.ratings[`variant${i}_3`] = document.getElementById(`variant${i}_3Rating`).value;
+                const exampleRating = document.getElementById(`example${i}Rating`).value;
+                const variant1Rating = document.getElementById(`variant${i}_1Rating`).value;
+                const variant2Rating = document.getElementById(`variant${i}_2Rating`).value;
+                const variant3Rating = document.getElementById(`variant${i}_3Rating`).value;
+                
+                if (exampleRating) formData.ratings[`例题${i}`] = exampleRating;
+                if (variant1Rating) formData.ratings[`变式${i}-1`] = variant1Rating;
+                if (variant2Rating) formData.ratings[`变式${i}-2`] = variant2Rating;
+                if (variant3Rating) formData.ratings[`变式${i}-3`] = variant3Rating;
             }
             
-            // 提交到GitHub Issues（这里需要替换为你的GitHub Token和仓库信息）
-            // 注意：由于GitHub Pages是静态页面，无法直接存储数据
-            // 我们需要一个后端API来处理，这里暂时模拟提交
-            try {
-                // 显示成功消息
-                document.getElementById('successMessage').style.display = 'block';
-                
-                // 重置表单
-                setTimeout(() => {
-                    document.getElementById('feedbackForm').reset();
-                    document.querySelectorAll('.star').forEach(star => {
-                        star.classList.remove('active');
+            return formData;
+        }
+
+        // 提交反馈的核心函数
+        async function submitFeedback(formData) {
+            // 方法1：使用GitHub的预填Issue功能
+            return submitViaGitHub(formData);
+        }
+
+        // 方法1：使用GitHub的预填Issue功能（最简单安全）
+        async function submitViaGitHub(formData) {
+            // 创建Issue内容
+            const issueContent = createIssueContent(formData);
+            
+            // 使用GitHub的"create issue from URL"功能
+            // 这个URL会打开GitHub的Issue创建页面，预填好内容
+            const title = encodeURIComponent(`[反馈] ${formData.teacherName} - ${formData.lectureTitle}`);
+            const body = encodeURIComponent(issueContent);
+            const labels = encodeURIComponent(`feedback,${formData.grade}`);
+            
+            const githubUrl = `https://github.com/Acheron-LL/teaching-feedback/issues/new?title=${title}&body=${body}&labels=${labels}`;
+            
+            // 打开新窗口，让用户在GitHub页面确认提交
+            const newWindow = window.open(githubUrl, '_blank', 'width=1000,height=700');
+            
+            // 返回一个承诺
+            return new Promise((resolve, reject) => {
+                if (newWindow) {
+                    // 检查窗口是否被阻止
+                    setTimeout(() => {
+                        if (newWindow.closed || !newWindow.document) {
+                            // 窗口被阻止，提供手动操作指引
+                            resolve({
+                                success: true,
+                                message: '请在新打开的GitHub页面中点击"Submit new issue"完成提交',
+                                url: githubUrl,
+                                manualCopy: true,
+                                issueContent: issueContent
+                            });
+                        } else {
+                            resolve({
+                                success: true,
+                                message: '请在GitHub页面完成提交',
+                                url: githubUrl
+                            });
+                        }
+                    }, 100);
+                } else {
+                    // 弹窗被阻止
+                    resolve({
+                        success: true,
+                        message: '请在新打开的GitHub页面中点击"Submit new issue"完成提交',
+                        url: githubUrl,
+                        manualCopy: true,
+                        issueContent: issueContent
                     });
-                    document.querySelectorAll('input[type="hidden"]').forEach(input => {
-                        input.value = '';
-                    });
-                    document.getElementById('classDate').valueAsDate = new Date();
-                    document.getElementById('successMessage').style.display = 'none';
-                }, 3000);
-                
-            } catch (error) {
-                alert('提交失败，请稍后重试');
-                console.error(error);
+                }
+            });
+        }
+
+        // 创建Issue内容
+        function createIssueContent(formData) {
+            let content = `## 教师基本信息
+- **姓名**: ${formData.teacherName}
+- **年级**: ${formData.grade}
+- **班型**: ${formData.classType}
+- **上课时间**: ${formData.classDate}
+- **讲次标题**: ${formData.lectureTitle}
+
+## 评分结果（1-5星）
+`;
+
+            // 添加评分
+            Object.entries(formData.ratings).forEach(([key, value]) => {
+                if (value && value !== '0') {
+                    const stars = '⭐'.repeat(parseInt(value));
+                    content += `- **${key}**: ${stars} (${value}星)\n`;
+                }
+            });
+            
+            content += `
+## 其他反馈
+- **能否一次讲完**: ${formData.canFinish}
+- **其他建议**: ${formData.suggestions || '无'}
+
+---
+*提交时间: ${new Date().toLocaleString('zh-CN')}*
+*此反馈通过教材反馈系统提交*`;
+            
+            return content;
+        }
+
+        // 显示成功消息
+        function showSuccessMessage(result) {
+            const successDiv = document.getElementById('successMessage');
+            
+            if (result.manualCopy) {
+                // 如果弹窗被阻止，提供详细指引
+                successDiv.innerHTML = `
+                    <i class="bi bi-check-circle-fill"></i> 
+                    <strong>请完成以下步骤：</strong>
+                    <ol class="mt-2 mb-2">
+                        <li>访问：<a href="${result.url}" target="_blank">${result.url}</a></li>
+                        <li>点击"Submit new issue"按钮完成提交</li>
+                    </ol>
+                    <p class="mb-1"><small>如果链接未自动打开，请手动复制访问</small></p>
+                `;
+            } else {
+                // 正常情况
+                successDiv.innerHTML = `
+                    <i class="bi bi-check-circle-fill"></i> 
+                    <strong>提交成功！</strong>
+                    <p class="mb-1">请在打开的GitHub页面中点击"Submit new issue"完成提交</p>
+                    <a href="${result.url}" target="_blank" class="btn btn-sm btn-success mt-1">
+                        <i class="bi bi-link"></i> 如果页面未打开，请点击这里
+                    </a>
+                `;
             }
-        });
+            
+            successDiv.style.display = 'block';
+        }
+
+        // 重置表单
+        function resetForm() {
+            document.getElementById('feedbackForm').reset();
+            document.querySelectorAll('.star').forEach(star => {
+                star.classList.remove('active');
+            });
+            document.querySelectorAll('input[type="hidden"]').forEach(input => {
+                input.value = '';
+            });
+            document.getElementById('classDate').valueAsDate = new Date();
+            // 不清除成功消息，让用户看到指引
+        }
     </script>
 </body>
 </html>
