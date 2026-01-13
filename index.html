@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高中教材使用反馈</title>
+    <!-- 引入Bootstrap美化界面 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        .container {
+            max-width: 900px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin-top: 30px;
+            margin-bottom: 50px;
+            padding: 30px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #4e73df;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            color: #2e59d9;
+            font-weight: bold;
+        }
+        .form-section {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 4px solid #4e73df;
+        }
+        .section-title {
+            color: #2e59d9;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .star-rating {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .star {
+            font-size: 24px;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .star:hover {
+            color: #ffd700;
+        }
+        .star.active {
+            color: #ffd700;
+        }
+        .question-group {
+            margin-bottom: 25px;
+        }
+        .question-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            transition: all 0.3s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="bi bi-journal-check"></i> 高中教材使用反馈问卷</h1>
+            <p class="text-muted">感谢您抽出宝贵时间提供反馈，这将帮助我们不断改进教材质量</p>
+        </div>
+
+        <form id="feedbackForm">
+            <!-- 基础信息 -->
+            <div class="form-section">
+                <h3 class="section-title"><i class="bi bi-person-circle"></i> 教师基本信息</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="question-group">
+                            <label class="question-label">教师姓名</label>
+                            <input type="text" class="form-control" id="teacherName" required placeholder="请输入您的姓名">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="question-group">
+                            <label class="question-label">带课年级</label>
+                            <select class="form-select" id="grade" required>
+                                <option value="">请选择年级</option>
+                                <option value="高一">高一</option>
+                                <option value="高二">高二</option>
+                                <option value="高三">高三</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="question-group">
+                            <label class="question-label">班型</label>
+                            <select class="form-select" id="classType" required>
+                                <option value="">请选择班型</option>
+                                <option value="极趣">极趣</option>
+                                <option value="极思">极思</option>
+                                <option value="极智">极智</option>
+                                <option value="极客">极客</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="question-group">
+                            <label class="question-label">上课时间</label>
+                            <input type="date" class="form-control" id="classDate" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-group">
+                    <label class="question-label">讲次标题</label>
+                    <input type="text" class="form-control" id="lectureTitle" required placeholder="请输入本次课程标题">
+                </div>
+            </div>
+
+            <!-- 例题评分部分 -->
+            <div class="form-section">
+                <h3 class="section-title"><i class="bi bi-star-fill"></i> 例题与变式评分（1-5星，5星最高）</h3>
+                
+                <div id="exampleSections"></div>
+            </div>
+
+            <!-- 其他反馈 -->
+            <div class="form-section">
+                <h3 class="section-title"><i class="bi bi-chat-left-text"></i> 其他反馈</h3>
+                <div class="question-group">
+                    <label class="question-label">本讲能否一次课讲完？</label>
+                    <div class="d-flex gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="canFinish" id="canFinishYes" value="能" required>
+                            <label class="form-check-label" for="canFinishYes">能</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="canFinish" id="canFinishNo" value="否">
+                            <label class="form-check-label" for="canFinishNo">否</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-group">
+                    <label class="question-label">其他建议</label>
+                    <textarea class="form-control" id="suggestions" rows="4" placeholder="请输入您的宝贵建议..."></textarea>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="submit-btn">
+                    <i class="bi bi-send-check"></i> 提交反馈
+                </button>
+            </div>
+            
+            <div id="successMessage" class="success-message">
+                <i class="bi bi-check-circle-fill"></i> 提交成功！感谢您的反馈。
+            </div>
+        </form>
+    </div>
+
+    <!-- 引入Bootstrap JS -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // 动态生成5个例题评分部分
+        const exampleSections = document.getElementById('exampleSections');
+        
+        for (let i = 1; i <= 5; i++) {
+            const section = document.createElement('div');
+            section.className = 'question-group';
+            section.innerHTML = `
+                <h5 class="mb-3">例题${i}</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="question-label">例题${i}评分</label>
+                        <div class="star-rating" data-name="example${i}">
+                            ${[1,2,3,4,5].map(star => `
+                                <i class="bi bi-star star" data-value="${star}"></i>
+                            `).join('')}
+                            <input type="hidden" id="example${i}Rating" name="example${i}Rating" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="question-label">变式${i}-1评分</label>
+                        <div class="star-rating" data-name="variant${i}_1">
+                            ${[1,2,3,4,5].map(star => `
+                                <i class="bi bi-star star" data-value="${star}"></i>
+                            `).join('')}
+                            <input type="hidden" id="variant${i}_1Rating" name="variant${i}_1Rating" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="question-label">变式${i}-2评分</label>
+                        <div class="star-rating" data-name="variant${i}_2">
+                            ${[1,2,3,4,5].map(star => `
+                                <i class="bi bi-star star" data-value="${star}"></i>
+                            `).join('')}
+                            <input type="hidden" id="variant${i}_2Rating" name="variant${i}_2Rating" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="question-label">变式${i}-3评分</label>
+                        <div class="star-rating" data-name="variant${i}_3">
+                            ${[1,2,3,4,5].map(star => `
+                                <i class="bi bi-star star" data-value="${star}"></i>
+                            `).join('')}
+                            <input type="hidden" id="variant${i}_3Rating" name="variant${i}_3Rating" required>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-4">
+            `;
+            exampleSections.appendChild(section);
+        }
+
+        // 星级评分功能
+        document.querySelectorAll('.star-rating').forEach(rating => {
+            const stars = rating.querySelectorAll('.star');
+            const hiddenInput = rating.querySelector('input[type="hidden"]');
+            
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    hiddenInput.value = value;
+                    
+                    // 重置所有星星
+                    stars.forEach(s => s.classList.remove('active'));
+                    
+                    // 激活选中的星星
+                    for (let i = 0; i < value; i++) {
+                        stars[i].classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // 设置默认日期为今天
+        document.getElementById('classDate').valueAsDate = new Date();
+
+        // 表单提交处理
+        document.getElementById('feedbackForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // 收集表单数据
+            const formData = {
+                teacherName: document.getElementById('teacherName').value,
+                grade: document.getElementById('grade').value,
+                classType: document.getElementById('classType').value,
+                classDate: document.getElementById('classDate').value,
+                lectureTitle: document.getElementById('lectureTitle').value,
+                canFinish: document.querySelector('input[name="canFinish"]:checked').value,
+                suggestions: document.getElementById('suggestions').value,
+                ratings: {}
+            };
+            
+            // 收集所有评分
+            for (let i = 1; i <= 5; i++) {
+                formData.ratings[`example${i}`] = document.getElementById(`example${i}Rating`).value;
+                formData.ratings[`variant${i}_1`] = document.getElementById(`variant${i}_1Rating`).value;
+                formData.ratings[`variant${i}_2`] = document.getElementById(`variant${i}_2Rating`).value;
+                formData.ratings[`variant${i}_3`] = document.getElementById(`variant${i}_3Rating`).value;
+            }
+            
+            // 提交到GitHub Issues（这里需要替换为你的GitHub Token和仓库信息）
+            // 注意：由于GitHub Pages是静态页面，无法直接存储数据
+            // 我们需要一个后端API来处理，这里暂时模拟提交
+            try {
+                // 显示成功消息
+                document.getElementById('successMessage').style.display = 'block';
+                
+                // 重置表单
+                setTimeout(() => {
+                    document.getElementById('feedbackForm').reset();
+                    document.querySelectorAll('.star').forEach(star => {
+                        star.classList.remove('active');
+                    });
+                    document.querySelectorAll('input[type="hidden"]').forEach(input => {
+                        input.value = '';
+                    });
+                    document.getElementById('classDate').valueAsDate = new Date();
+                    document.getElementById('successMessage').style.display = 'none';
+                }, 3000);
+                
+            } catch (error) {
+                alert('提交失败，请稍后重试');
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
